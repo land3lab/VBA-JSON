@@ -1,108 +1,68 @@
-# VBA-JSON
+# Land3 Real Estate Office Dashboard
 
-JSON conversion and parsing for VBA (Windows and Mac Excel, Access, and other Office applications).
-It grew out of the excellent project [vba-json](https://code.google.com/p/vba-json/),
-with additions and improvements made to resolve bugs and improve performance (as part of [VBA-Web](https://github.com/VBA-tools/VBA-Web)).
+대한민국 공인중개사 사무소에서 매물, 고객, 계약, 일정, 매출, 체크리스트를 한 화면에서 관리할 수 있도록 만든 Next.js 기반 업무용 대시보드입니다.
 
-Tested in Windows Excel 2013 and Excel for Mac 2011, but should apply to 2007+.
+## 주요 기능
 
-- For Windows-only support, include a reference to "Microsoft Scripting Runtime"
-- For Mac and Windows support, include [VBA-Dictionary](https://github.com/VBA-tools/VBA-Dictionary)
+- **메인 대시보드**: 오늘 상담 고객, 신규 매물, 진행 계약, 예상 중개보수, 잔금 예정, 만기 임대차 지표 카드
+- **매물 관리**: 한국 부동산 실무형 매물 목록, 검색, 상태 뱃지, 빠른 등록, 삭제
+- **고객 관리**: 고객 구분, 희망 조건, 예산, 대출 필요 여부, 상태 관리
+- **계약 관리**: 상담부터 완료까지 계약 단계 진행률, 잔금일, 중개보수, 위험 뱃지
+- **일정/할일 관리**: 잔금 예정, 계약서 작성, 고객 재연락, 만기 임대차 알림
+- **매출/성과 분석**: Recharts 기반 월별 예상/실제 중개보수, 담당자/유입경로 성과
+- **문서/체크리스트**: 확인설명서, 전세사기 예방, 권리분석 등 실무 체크리스트
+- **설정**: 향후 Supabase, Google Calendar, Gmail, Kakao 알림톡 연동을 고려한 설정 영역
 
-<a href="https://www.patreon.com/timhall">
-  <img src="https://timhall.github.io/assets/donate-patreon@2x.png" width="217" alt="Donate">
-</a>
+## 기술 스택
 
-# Examples
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui 스타일의 재사용 UI 컴포넌트
+- Recharts
+- Zustand
+- localStorage 임시 데이터 저장
 
-```vb
-Dim Json As Object
-Set Json = JsonConverter.ParseJson("{""a"":123,""b"":[1,2,3,4],""c"":{""d"":456}}")
+## 설치 및 실행
 
-' Json("a") -> 123
-' Json("b")(2) -> 2
-' Json("c")("d") -> 456
-Json("c")("e") = 789
-
-Debug.Print JsonConverter.ConvertToJson(Json)
-' -> "{"a":123,"b":[1,2,3,4],"c":{"d":456,"e":789}}"
-
-Debug.Print JsonConverter.ConvertToJson(Json, Whitespace:=2)
-' -> "{
-'       "a": 123,
-'       "b": [
-'         1,
-'         2,
-'         3,
-'         4
-'       ],
-'       "c": {
-'         "d": 456,
-'         "e": 789  
-'       }
-'     }"
+```bash
+npm install
+npm run dev
 ```
 
-```vb
-' Advanced example: Read .json file and load into sheet (Windows-only)
-' (add reference to Microsoft Scripting Runtime)
-' {"values":[{"a":1,"b":2,"c": 3},...]}
+브라우저에서 <http://localhost:3000>으로 접속합니다.
 
-Dim FSO As New FileSystemObject
-Dim JsonTS As TextStream
-Dim JsonText As String
-Dim Parsed As Dictionary
+## 빌드 확인
 
-' Read .json file
-Set JsonTS = FSO.OpenTextFile("example.json", ForReading)
-JsonText = JsonTS.ReadAll
-JsonTS.Close
-
-' Parse json to Dictionary
-' "values" is parsed as Collection
-' each item in "values" is parsed as Dictionary
-Set Parsed = JsonConverter.ParseJson(JsonText)
-
-' Prepare and write values to sheet
-Dim Values As Variant
-ReDim Values(Parsed("values").Count, 3)
-
-Dim Value As Dictionary
-Dim i As Long
-
-i = 0
-For Each Value In Parsed("values")
-  Values(i, 0) = Value("a")
-  Values(i, 1) = Value("b")
-  Values(i, 2) = Value("c")
-  i = i + 1
-Next Value
-
-Sheets("example").Range(Cells(1, 1), Cells(Parsed("values").Count, 3)) = Values
+```bash
+npm run build
 ```
 
-## Options
+## 프로젝트 구조
 
-VBA-JSON includes a few options for customizing parsing/conversion if needed:
-
-- __UseDoubleForLargeNumbers__ (Default = `False`) VBA only stores 15 significant digits, so any numbers larger than that are truncated.
-  This can lead to issues when BIGINT's are used (e.g. for Ids or Credit Cards), as they will be invalid above 15 digits.
-  By default, VBA-JSON will use `String` for numbers longer than 15 characters that contain only digits, use this option to use `Double` instead.
-- __AllowUnquotedKeys__ (Default = `False`) The JSON standard requires object keys to be quoted (`"` or `'`), use this option to allow unquoted keys.
-- __EscapeSolidus__ (Default = `False`) The solidus (`/`) is not required to be escaped, use this option to escape them as `\/` in `ConvertToJson`.
-
-```VB.net
-JsonConverter.JsonOptions.EscapeSolidus = True
+```text
+app/
+  globals.css
+  layout.tsx
+  page.tsx
+components/
+  app-shell.tsx
+  charts.tsx
+  ui/
+    badge.tsx
+    card.tsx
+lib/
+  format.ts
+  mock-data.ts
+  types.ts
+  utils.ts
+  store/dashboard-store.ts
 ```
 
-## Installation
+## 샘플 데이터
 
-1. Download the [latest release](https://github.com/VBA-tools/VBA-JSON/releases)
-2. Import `JsonConverter.bas` into your project (Open VBA Editor, `Alt + F11`; File > Import File)
-3. Add `Dictionary` reference/class
-   - For Windows-only, include a reference to "Microsoft Scripting Runtime"
-   - For Windows and Mac, include [VBA-Dictionary](https://github.com/VBA-tools/VBA-Dictionary)
+서울 관악구, 동작구, 금천구, 강남구, 영등포구의 아파트, 오피스텔, 빌라, 상가, 사무실, 토지, 건물 매물을 포함합니다. 모든 고객명, 전화번호, 주소 상세값은 실제 개인정보가 아닌 가상 데이터입니다.
 
-## Resources
+## 환경 변수
 
-- [Tutorial Video (Red Stapler)](https://youtu.be/CFFLRmHsEAs)
+외부 API는 현재 연동하지 않습니다. 향후 연동 시 `.env.example`을 복사해 `.env.local`을 만들고 실제 키를 입력하세요.
